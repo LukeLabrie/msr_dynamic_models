@@ -74,78 +74,72 @@ def dydtMSRE(t,y,delays):
     rho = (a_f/2)*((-T0_f1+T_cf1)+(-T0_f2+T_cf2)) + a_g*(-T0_g1+T_cg)
 
     # radiator coolant outlet 
-    if (t_current > tau_r_hx):
-        dTdt_rc_in = -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc4_delay + (hA_sn/mcp_sn)*T_ht1_delay + (W_s/mn_s)*T_hc3_delay                                  # T_in_rc
-        dTdt_rc_out = -((W_rp/mn_rp)+(hA_rpn/mcp_rpn))*T_out_rc + (hA_rpn/mcp_rpn)*T_out_air + (W_rp/mn_rp)*T_in_rc                                   # T_out_rc
-        dTdt_air_out = -((W_rs/mn_rs)+(hA_rsn/mcp_rsn))*T_out_air + (hA_rsn/mcp_rsn)*T_out_rc + (W_rs/mn_rs)*Trs_in                                    # T_out_air               
+    if (t > tau_r_hx):
+        dTdt_hc_in = -((W_rp/mn_rp)+(hA_rpn/mcp_rpn))*T_out_rc_delay + (hA_rpn/mcp_rpn)*T_out_air_delay + (W_rp/mn_rp)*T_in_rc_delay # T_in_hc            
     else:
-        dTdt_rc_in = 0.0                  
-        dTdt_rc_out = 0.0                               
-        dTdt_air_out = 0.0  
-
-        # WRONG ^^^^ FIX THIS 
+        dTdt_hc_in = 0.0
 
     # radiator coolant inlet 
-    if (t_current > tau_hx_r):
-
-
-        d_indicies[3] = i_min # hx coolant outlet (coolant node 3)
-        d_indicies[4] = i_min # hx coolant outlet (coolant node 4)
-        d_indicies[5] = i_min # hx coolant outlet (tube node 1)
+    if (t > tau_hx_r):
+        dTdt_rc_in = -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc4_delay + (hA_sn/mcp_sn)*T_ht1_delay + (W_s/mn_s)*T_hc3_delay                   # T_in_rc            
+    else:
+        dTdt_rc_in = 0.0
 
     # core fuel inlet 
-    if (t_current > tau_hx_c):
-
-        
-        d_indicies[6] = i_min # hx fuel outlet (tube node 2)
-        d_indicies[11] = i_min # hx fuel outlet (fuel node 3)
-        d_indicies[12] = i_min # hx fuel outlet (fuel node 4)
+    if (t > tau_hx_c):
+        dTdt_cf_in = -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf4_delay + (hA_pn/mcp_pn)*T_ht2_delay + (W_p/mn_p)*T_hf3_delay                    # T_in_cf
+    else:
+        dTdt_cf_in = 0.0 
 
     # hx fuel inlet 
-    if (t_current > tau_c_hx):
-
-        d_indicies[7] = i_min # core fuel outlet (fuel node 1)
-        d_indicies[8] = i_min # core fuel outlet (fuel node 2)
-        d_indicies[9] = i_min # core fuel outlet (graphite node 1)
-        d_indicies[10] = i_min # core fuel outlet (neutron density)
+    if (t > tau_c_hx):
+        dTdt_hf_in = -((W_f/mn_f)+(hA_fg*k_2/mcp_f2))*T_cf2_delay + (hA_fg*k_2/mcp_f2)*T_cg_delay + (W_f/mn_f)*T_cf1_delay + (k_f2*P/mcp_f2)*n_delay # T_in_hf
+    else:
+        dTdt_hf_in = 0.0
 
     # hx precursors 
-    if (t_current > tau_l):
-        
-        d_indicies[13] = i_min # precursor group 1
-        d_indicies[14] = i_min # precursor group 2
-        d_indicies[15] = i_min # precursor group 3
-        d_indicies[16] = i_min # precursor group 4
-        d_indicies[17] = i_min # precursor group 5
-        d_indicies[18] = i_min # precursor group 6
+    if (t > tau_l):
+        dC1dt = beta[0]/Lam-lam[0]*C1-C1/tau_c+C1_delay*np.exp(-lam[0]*tau_l)/tau_c  # C1
+        dC2dt = beta[1]/Lam-lam[1]*C2-C2/tau_c+C2_delay*np.exp(-lam[1]*tau_l)/tau_c  # C2
+        dC3dt = beta[2]/Lam-lam[2]*C3-C3/tau_c+C3_delay*np.exp(-lam[2]*tau_l)/tau_c  # C3
+        dC4dt = beta[3]/Lam-lam[3]*C4-C4/tau_c+C4_delay*np.exp(-lam[3]*tau_l)/tau_c  # C4
+        dC5dt = beta[4]/Lam-lam[4]*C5-C5/tau_c+C5_delay*np.exp(-lam[4]*tau_l)/tau_c  # C5
+        dC6dt = beta[5]/Lam-lam[5]*C6-C6/tau_c+C6_delay*np.exp(-lam[5]*tau_l)/tau_c  # C6
+    else:
+        dC1dt = beta[0]/Lam-lam[0]*C1-C1/tau_c+C1*np.exp(-lam[0]*tau_l)/tau_c  # C1
+        dC2dt = beta[1]/Lam-lam[1]*C2-C2/tau_c+C2*np.exp(-lam[1]*tau_l)/tau_c  # C2
+        dC3dt = beta[2]/Lam-lam[2]*C3-C3/tau_c+C3*np.exp(-lam[2]*tau_l)/tau_c  # C3
+        dC4dt = beta[3]/Lam-lam[3]*C4-C4/tau_c+C4*np.exp(-lam[3]*tau_l)/tau_c  # C4
+        dC5dt = beta[4]/Lam-lam[4]*C5-C5/tau_c+C5*np.exp(-lam[4]*tau_l)/tau_c  # C5
+        dC6dt = beta[5]/Lam-lam[5]*C6-C6/tau_c+C6*np.exp(-lam[5]*tau_l)/tau_c  # C6
 
     dydt = [ 
-    dTdt_rc_in,                                                                                                                      # T_in_rc
-    dTdt_rc_out,                                                                                                                     # T_out_rc
-    dTdt_air_out,                                                                                                                    # T_out_air
-    -((W_f/mn_f)+(hA_fg*k_2/mcp_f2))*T_cf2_delay + (hA_fg*k_2/mcp_f2)*T_cg_delay + (W_f/mn_f)*T_cf1_delay + (k_f2*P/mcp_f2)*n_delay, # T_in_hf
-    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf1 + (hA_pn/mcp_pn)*T_ht1 + (W_p/mn_p)*T_in_hf,                                                         # T_hf1
-    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf2 + (hA_pn/mcp_pn)*T_ht1 + (W_p/mn_p)*T_hf1,                                                           # T_hf2
-    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf3 + (hA_pn/mcp_pn)*T_ht2 + (W_p/mn_p)*T_hf2,                                                           # T_hf3
-    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf4 + (hA_pn/mcp_pn)*T_ht2 + (W_p/mn_p)*T_hf3,                                                           # T_hf4
-    -2*((hA_pn/mcp_tn)+(hA_sn/mcp_tn))*T_ht1 + (2*hA_pn/mcp_tn)*T_hf1 + (2*hA_sn/mcp_tn)*T_hc3,                                      # T_ht1
-    -2*((hA_pn/mcp_tn)+(hA_sn/mcp_tn))*T_ht2 + (2*hA_pn/mcp_tn)*T_hf3 + (2*hA_sn/mcp_tn)*T_hc1,                                      # T_ht2
-    -((W_rp/mn_rp)+(hA_rpn/mcp_rpn))*T_out_rc_delay + (hA_rpn/mcp_rpn)*T_out_air_delay + (W_rp/mn_rp)*T_in_rc_delay,                 # T_in_hc
-    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc1 + (hA_sn/mcp_sn)*T_ht2 + (W_s/mn_s)*T_in_hc,                                                  # T_hc1
-    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc2 + (hA_sn/mcp_sn)*T_ht2 + (W_s/mn_s)*T_hc1,                                                    # T_hc2
-    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc3 + (hA_sn/mcp_sn)*T_ht1 + (W_s/mn_s)*T_hc2,                                                    # T_hc3
-    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc4 + (hA_sn/mcp_sn)*T_ht1 + (W_s/mn_s)*T_hc3,                                                    # T_hc4
-    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf4_delay + (hA_pn/mcp_pn)*T_ht2_delay + (W_p/mn_p)*T_hf3_delay,                                         # T_in_cf
-    (rho-beta_t)*n/Lam+lam[0]*C1+lam[1]*C2+lam[2]*C3+lam[3]*C4+lam[4]*C5+lam[5]*C6,                                                  # n (no source insertion)
-    beta[0]/Lam-lam[0]*C1-C1/tau_c+C1_delay*np.exp(-lam[0]*tau_l)/tau_c,                                                        # C1
-    beta[1]/Lam-lam[1]*C2-C2/tau_c+C2_delay*np.exp(-lam[1]*tau_l)/tau_c,                                                        # C2
-    beta[2]/Lam-lam[2]*C3-C3/tau_c+C3_delay*np.exp(-lam[2]*tau_l)/tau_c,                                                        # C3
-    beta[3]/Lam-lam[3]*C4-C4/tau_c+C4_delay*np.exp(-lam[3]*tau_l)/tau_c,                                                        # C4
-    beta[4]/Lam-lam[4]*C5-C5/tau_c+C5_delay*np.exp(-lam[4]*tau_l)/tau_c,                                                        # C5
-    beta[5]/Lam-lam[5]*C6-C6/tau_c+C6_delay*np.exp(-lam[5]*tau_l)/tau_c,                                                        # C6
-    (hA_fg/mcp_g1)*(T_cf1 - T_cg) + k_g*P*n/mcp_g1,                                                                                  # T_cg
-    W_f/mn_f*(T_in_cf - T_cf1) + (k_f1*P*n/mcp_f1) + (hA_fg*k_1*(T_cg - T_cf1)/mcp_f1),                                            # T_cf1   
-    W_f/mn_f*(T_cf1 - T_cf2) + (k_f2*P*n/mcp_f2) + (hA_fg*k_2*(T_cg - T_cf2)/mcp_f2)                                             # T_cf2   
+    dTdt_rc_in,                                                                                      # T_in_rc
+    -((W_rp/mn_rp)+(hA_rpn/mcp_rpn))*T_out_rc + (hA_rpn/mcp_rpn)*T_out_air + (W_rp/mn_rp)*T_in_rc ,  # T_out_rc                                                                                   # T_out_rc
+    -((W_rs/mn_rs)+(hA_rsn/mcp_rsn))*T_out_air + (hA_rsn/mcp_rsn)*T_out_rc + (W_rs/mn_rs)*Trs_in,    # T_out_air
+    dTdt_hf_in,                                                                                      # T_in_hf
+    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf1 + (hA_pn/mcp_pn)*T_ht1 + (W_p/mn_p)*T_in_hf,                  # T_hf1
+    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf2 + (hA_pn/mcp_pn)*T_ht1 + (W_p/mn_p)*T_hf1,                    # T_hf2
+    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf3 + (hA_pn/mcp_pn)*T_ht2 + (W_p/mn_p)*T_hf2,                    # T_hf3
+    -((W_p/mn_p)+(hA_pn/mcp_pn))*T_hf4 + (hA_pn/mcp_pn)*T_ht2 + (W_p/mn_p)*T_hf3,                    # T_hf4
+    -2*((hA_pn/mcp_tn)+(hA_sn/mcp_tn))*T_ht1 + (2*hA_pn/mcp_tn)*T_hf1 + (2*hA_sn/mcp_tn)*T_hc3,      # T_ht1
+    -2*((hA_pn/mcp_tn)+(hA_sn/mcp_tn))*T_ht2 + (2*hA_pn/mcp_tn)*T_hf3 + (2*hA_sn/mcp_tn)*T_hc1,      # T_ht2
+    dTdt_hc_in,                                                                                      # T_in_hc
+    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc1 + (hA_sn/mcp_sn)*T_ht2 + (W_s/mn_s)*T_in_hc,                  # T_hc1
+    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc2 + (hA_sn/mcp_sn)*T_ht2 + (W_s/mn_s)*T_hc1,                    # T_hc2
+    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc3 + (hA_sn/mcp_sn)*T_ht1 + (W_s/mn_s)*T_hc2,                    # T_hc3
+    -((W_s/mn_s)+(hA_sn/mcp_sn))*T_hc4 + (hA_sn/mcp_sn)*T_ht1 + (W_s/mn_s)*T_hc3,                    # T_hc4
+    dTdt_cf_in,                                                                                      # T_in_cf
+    (rho-beta_t)*n/Lam+lam[0]*C1+lam[1]*C2+lam[2]*C3+lam[3]*C4+lam[4]*C5+lam[5]*C6,                  # n (no source insertion)
+    dC1dt,                                                                                           # C1
+    dC2dt,                                                                                           # C2
+    dC3dt,                                                                                           # C3
+    dC4dt,                                                                                           # C4
+    dC5dt,                                                                                           # C5
+    dC6dt,                                                                                           # C6
+    (hA_fg/mcp_g1)*(T_cf1 - T_cg) + k_g*P*n/mcp_g1,                                                  # T_cg
+    W_f/mn_f*(T_in_cf - T_cf1) + (k_f1*P*n/mcp_f1) + (hA_fg*k_1*(T_cg - T_cf1)/mcp_f1),              # T_cf1   
+    W_f/mn_f*(T_cf1 - T_cf2) + (k_f2*P*n/mcp_f2) + (hA_fg*k_2*(T_cg - T_cf2)/mcp_f2)                 # T_cf2   
     ]
     return dydt
 
@@ -274,10 +268,12 @@ def main():
     r.set_solout(solout)
 
     sol = []
-    k = 10
+    k = 15
     t_start = 0.0
+    t_stop = 30.0
     d_new = [0]*19
-    for i in range(k):
+    i = 0
+    while (t_start < t_stop):
         # take one step
         if (i == 0):
             r.set_initial_value(y0,t0).set_f_params(d0)
@@ -286,7 +282,6 @@ def main():
             sol.append(sol_interim[1])
         else:
             t_start = sol[-1][0]
-            print(d_new)
             r.set_initial_value(sol[-1][1:],t_start).set_f_params(d_new)
             r.integrate(t_start+1.0)
             sol.append(sol_interim[1])
@@ -299,7 +294,7 @@ def main():
         for j in range(19):
             d_new[j] = sol[d_idx[j]][y_to_d_map[j]+1] 
         sol_interim = []
-
+        i += 1
 
     for i in range(k-5,k):
         i_rev = len(sol)-(10-i)
@@ -307,7 +302,7 @@ def main():
         print(f"n: {sol[i][17]}")
         print(f"T0_g1: {T0_g1}")
         print(f"T_cg: {sol[i][24]}")
-        print(f"T_cf_in: {sol[i][15]}")
+        print(f"T_cf_in: {sol[i][16]}")
         print(f"T0_f1: {T0_f1}")
         print(f"T_cf1: {sol[i][25]}")
         print(f"T0_f2: {T0_f2}")
@@ -317,9 +312,11 @@ def main():
         T_cf2 = sol[i][26]
         print(f"rho: {(a_f/2)*((-T0_f1+T_cf1)+(-T0_f2+T_cf2)) + a_g*(-T0_g1+T_cg)}\n")
 
-    #plt.plot([s[0] for s in sol],[s[15] for s in sol])
-    #plt.show()
-
+    rhos = [(a_f/2)*((-T0_f1+sol[i][25])+(-T0_f2+sol[i][26])) + a_g*(-T0_g1+sol[i][24]) for i in range(len(sol))]
+    plt.plot([s[0] for s in sol],[s[17] for s in sol])
+    
+    #plt.plot([s[0] for s in sol],rhos)
+    plt.show()
 
     return None 
 
@@ -347,15 +344,17 @@ def debug():
     derivs = []
     rhos = []
     #print(f"{y0}\n")
-    for i in range(2):
+    for i in range(1):
         deriv = dydtMSRE(sol[-1][0],sol[-1][1:],d0)
         derivs.append(deriv)
         deriv.insert(0,sol[-1][0]+dt)
         new_sol = [sol[-1][j]+dt*deriv[j] for j in range(len(deriv))]
         new_sol[0] = sol[-1][0]+dt
         sol.append(new_sol)
-        
     print(derivs)
+    for i in range(len(derivs)):
+        print(f"t: {derivs[i][0]}")    
+        print(f"dTdt_cf_in: {derivs[i][16]}")
     #for i in range(10):
     #    print(f"t: {sol[i][0]}")
     #    print(f"n: {sol[i][17]}\n")
@@ -387,7 +386,6 @@ def debug2():
 
     return None
 
-
-
+#debug()
 #debug2()
 main()
