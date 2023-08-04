@@ -3,7 +3,7 @@ import numpy as np
 from scipy.integrate import ode
 import matplotlib.pyplot as plt
 
-def dydtMSRE(t,y,delays):
+def dydtMSRE(t,y,delays,rho_ext):
 
     '''
     Returns derivative of state vector y; y' or dy/dt, of the MSRE system.
@@ -71,7 +71,7 @@ def dydtMSRE(t,y,delays):
     # need to handle time delays, perhaps take one-step at a time, update y_0
     # or use function as input which calculates necessary delay terms 
 
-    rho = (a_f/2)*((-T0_f1+T_cf1)+(-T0_f2+T_cf2)) + a_g*(-T0_g1+T_cg)
+    rho = (a_f/2)*((-T0_f1+T_cf1)+(-T0_f2+T_cf2)) + a_g*(-T0_g1+T_cg) + rho_ext
 
     # radiator coolant outlet 
     if (t > tau_r_hx):
@@ -288,20 +288,25 @@ def main():
     sol = []
     y_next = []
     k = 2
-    t_stop = 250.0
+    t_stop = 700.0
     d_new = [0]*19
     i = 0
+    insert = 1.39e-4
+    t_insert = 500.00
     while (t_start < t_stop):
         # take one step
         if (i == 0):
-            r.set_initial_value(y0,t0).set_f_params(d0)
-            r.integrate(1.0)
+            r.set_initial_value(y0,t0).set_f_params(d0,0.0)
+            r.integrate(0.1)
             sol.append(sol_interim[0])
             sol.append(sol_interim[1])
         else:
             t_start = sol[-1][0]
-            r.set_initial_value(y_next,t_start).set_f_params(d_new)
-            r.integrate(t_start+1.0)
+            if (t_start>=t_insert):
+                r.set_initial_value(y_next,t_start).set_f_params(d_new,insert)
+            else:
+                r.set_initial_value(y_next,t_start).set_f_params(d_new,0.0)
+            r.integrate(t_start+0.1)
             sol.append(sol_interim[1])
 
         # account for delays 
@@ -340,6 +345,7 @@ def main():
         y_next = sol[-1][1:]
         sol_interim = []
         i += 1
+        print(t_start)
 
     for i in range(len(sol)-6,len(sol)-1):
         i_rev = len(sol)-(10-i)
@@ -389,9 +395,17 @@ def main():
     # 24: core graphite temp
     # 25: core fuel node 1 temp
     # 26: core fuel node 2 temp
-    of_interest = 17
-    plt.plot([s[0] for s in sol],[s[of_interest] for s in sol])
-    plt.show()
+    #of_interest = 17
+    #plt.plot([s[0] for s in sol],[s[of_interest] for s in sol])
+    #plt.show()
+
+    for p in range(0,27):
+        #generate id  
+        fig,ax = plt.subplots()  #create a new figure
+        tidx = [s[0] for s in enumerate(sol) if s[1][0] > 499.00]
+        ax.plot([s[0] for s in sol if s[0] > 499.00],[s[p] for s in sol][tidx[0]:])
+        fig.savefig(f"{p}.png")
+
     #for i in range(len(sol)):
     #    print(f"t: {sol[i][0]}, hx out: {sol[i][8]}, core in: {sol[i][16]}")
 
