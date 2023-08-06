@@ -265,8 +265,7 @@ def main():
     # initial conditions
     y0 = [T0_s4, T0_rp, T0_rs, T0_f2, T0_p1,T0_p2, T0_p3, T0_p4, T0_t1, T0_t2,
           T0_rp, T0_s1, T0_s2, T0_s3, T0_s4, T0_p4, n_frac0, C0[0], 
-          C0[1], C0[2], C0[3], C0[4], C0[5], T0_g1, T0_f1, T0_f2
-    ]
+          C0[1], C0[2], C0[3], C0[4], C0[5], T0_g1, T0_f1, T0_f2]
      
 
     # initial delay terms 
@@ -276,7 +275,7 @@ def main():
 
     # solve
     backend = 'dopri5'
-    r = ode(dydtMSRE).set_integrator(backend)
+    r = ode(dydtMSRE).set_integrator(backend,nsteps=7500)
 
     sol_interim = []
     def solout(t, y):
@@ -288,11 +287,12 @@ def main():
     sol = []
     y_next = []
     k = 2
-    t_stop = 700.0
+    t_stop = 1000.0
     d_new = [0]*19
     i = 0
-    insert = 1.39e-4
+    insert = 1.0e-4
     t_insert = 500.00
+    d_track = []
     while (t_start < t_stop):
         # take one step
         if (i == 0):
@@ -342,28 +342,41 @@ def main():
         for j in range(19):
             d_new[j] = sol[d_idx[j]][y_to_d_map[j]+1] 
 
+        # precursors
+        idx_c = 0
+        if (t_start > tau_l):
+            idx_c = get_tIdx(t_start,tau_l,[s[0] for s in sol])
+        d_new[13] = sol[idx_c][18]
+        d_new[14] = sol[idx_c][19]
+        d_new[15] = sol[idx_c][20]
+        d_new[16] = sol[idx_c][21]
+        d_new[17] = sol[idx_c][22]
+        d_new[18] = sol[idx_c][23]
+
+
         y_next = sol[-1][1:]
         sol_interim = []
         i += 1
         print(t_start)
+        d_track.append(d_new[13])
 
-    for i in range(len(sol)-6,len(sol)-1):
-        i_rev = len(sol)-(10-i)
-        print(f"t: {sol[i][0]}")
-        print(f"n: {sol[i][17]}")
-        print(f"T0_g1: {T0_g1}")
-        print(f"T_cg: {sol[i][24]}")
-        print(f"T_cf_in: {sol[i][16]}")
-        print(f"T0_f1: {T0_f1}")
-        print(f"T_cf1: {sol[i][25]}")
-        print(f"T0_f2: {T0_f2}")
-        print(f"T_cf2: {sol[i][26]}")
-        T_cg = sol[i][24]
-        T_cf1 = sol[i][25]
-        T_cf2 = sol[i][26]
-        print(f"rho: {(a_f/2)*((-T0_f1+T_cf1)+(-T0_f2+T_cf2)) + a_g*(-T0_g1+T_cg)}\n")
+    #for i in range(len(sol)-6,len(sol)-1):
+    #    i_rev = len(sol)-(10-i)
+    #    print(f"t: {sol[i][0]}")
+    #    print(f"n: {sol[i][17]}")
+    #    print(f"T0_g1: {T0_g1}")
+    #    print(f"T_cg: {sol[i][24]}")
+    #    print(f"T_cf_in: {sol[i][16]}")
+    #    print(f"T0_f1: {T0_f1}")
+    #    print(f"T_cf1: {sol[i][25]}")
+    #    print(f"T0_f2: {T0_f2}")
+    #    print(f"T_cf2: {sol[i][26]}")
+    #    T_cg = sol[i][24]
+    #    T_cf1 = sol[i][25]
+    #    T_cf2 = sol[i][26]
+    #    print(f"rho: {(a_f/2)*((-T0_f1+T_cf1)+(-T0_f2+T_cf2)) + a_g*(-T0_g1+T_cg)}\n")
 
-    print(sol[-5:])
+    #print(sol[-5:])
     #rhos = [(a_f/2)*((-T0_f1+sol[i][25])+(-T0_f2+sol[i][26])) + a_g*(-T0_g1+sol[i][24]) for i in range(len(sol))]
 
     #for j in range(len(sol[0])):
@@ -399,16 +412,23 @@ def main():
     #plt.plot([s[0] for s in sol],[s[of_interest] for s in sol])
     #plt.show()
 
-    for p in range(0,27):
+    #for p in range(0,27):
         #generate id  
-        fig,ax = plt.subplots()  #create a new figure
-        tidx = [s[0] for s in enumerate(sol) if s[1][0] > 499.00]
-        ax.plot([s[0] for s in sol if s[0] > 499.00],[s[p] for s in sol][tidx[0]:])
-        fig.savefig(f"{p}.png")
+    #    fig,ax = plt.subplots()  #create a new figure
+    #    tidx = [s[0] for s in enumerate(sol) if s[1][0] > 499.00]
+    #    ax.plot([s[0] for s in sol if s[0] > 499.00],[s[p] for s in sol][tidx[0]:])
+    #    fig.savefig(f"{p}.png")
 
-    #for i in range(len(sol)):
-    #    print(f"t: {sol[i][0]}, hx out: {sol[i][8]}, core in: {sol[i][16]}")
+    #for i in range(len(sol)-1):
+    #    print(f"t: {sol[i][0]}, c1: {sol[i][18]}, c1_delay: {d_track[i]}")
 
+    output_filename = f"sim_out_{t_stop}_{P}.txt"
+    results = open(output_filename,'w+')
+    for k in range(len(sol)):
+        for col in range(len(sol[0])):
+            results.write(f"{sol[k][col]} ")
+        results.write("\n")
+        
     return None 
 
 def debug():
@@ -471,6 +491,8 @@ def debug2():
     d0 = [T0_rp, T0_rs, T0_s4,  T0_s3, T0_s4, T0_t1, T0_t2, T0_f1, T0_f2,     \
           T0_g1, n_frac0, T0_p3, T0_p4, C0[0], C0[1], C0[2], C0[3], C0[4],    \
           C0[5]] 
+    
+    # need to look at precursor behavior
 
     dydt = dydtMSRE(t0,y0,d0)
     for i in range(len(dydt)):
