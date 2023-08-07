@@ -43,7 +43,7 @@ ts_max = 1e-1  # maximum timestep (s)
 # NEUTRONICS DATA
 tau_l = 16.73  # ORNL-TM-0728 %16.44; % (s)
 tau_c = 8.46  # ORNL-TM-0728 %8.460; % (s)
-P = 1  # Thermal Power in MW ORNL-TM-1070, p.2
+P = 8  # Thermal Power in MW ORNL-TM-1070, p.2
 n_frac0 = 5  # initial fractional neutron density n/n0 (n/cm^3/s)
 Lam = 2.400E-04  # mean generation time ORNL-TM-1070 p.15 U235
 # Lam = 4.0E-04;  # mean generation time ORNL-TM-1070 p.15 U233
