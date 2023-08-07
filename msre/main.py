@@ -107,7 +107,7 @@ def get_tIdx(t,tao,timeVec):
         if (diff<diff_min):
             diff_min = abs(td-t[1])
             idx = t[0]
-    return idx
+    return idx, timeVec[idx]-td
 
 def main():
     '''
@@ -134,7 +134,7 @@ def main():
     # timing parameters
     t0 = 0.0
     t_start = t0
-    t_stop = 100.0
+    t_stop = 1000.0
 
     # solution 
     sol = []
@@ -142,15 +142,21 @@ def main():
     # step-reactivity insertion
     t_insert = 500.00
     insert = 1.0e-4
-    
+    if (t_start>=t_insert):
+        rho_ext = insert
+    else:
+        rho_ext = 0.0
+
     # delay parameters
     d_terms = []
+    derivs = [dydtMSRE(t0,y0,d0,rho_ext)]
 
     # takes one step at a time and then accounts for delay terms
     i = 0
     while (t_start < t_stop):
         # take one step
         if (i == 0):
+            t_start = t0
             r.set_initial_value(y0,t0).set_f_params(d0,0.0)
             r.integrate(0.1)
             sol.append(sol_interim[0])
@@ -158,48 +164,55 @@ def main():
         else:
             t_start = sol[-1][0]
             if (t_start>=t_insert):
-                r.set_initial_value(y_next,t_start).set_f_params(d_new,insert)
+                rho_ext = insert
             else:
-                r.set_initial_value(y_next,t_start).set_f_params(d_new,0.0)
+                rho_ext = 0.0
+            r.set_initial_value(y_next,t_start).set_f_params(d_new,rho_ext)
             r.integrate(t_start+0.1)
             sol.append(sol_interim[1])
+            derivs.append(dydtMSRE(t_start,y_next,d_new,rho_ext))
 
         # account for delays, linear interpolation for time differences 
         # core fuel inlet
         d_new = [0]*10
         idx_cf_in = 0
+        dt_cf = 0.0
         if (t_start > tau_hx_c):
-            idx_cf_in = get_tIdx(t_start,tau_hx_c,[s[0] for s in sol])
-        d_new[3] = sol[idx_cf_in][6]
+            idx_cf_in, dt_cf = get_tIdx(t_start,tau_hx_c,[s[0] for s in sol])
+        d_new[3] = sol[idx_cf_in][6] + dt_cf*derivs[idx_cf_in][5]
 
         # heat exchanger fuel inlet
         idx_hf_in = 0
+        dt_hf = 0.0
         if (t_start > tau_c_hx):
-            idx_hf_in = get_tIdx(t_start,tau_c_hx,[s[0] for s in sol])
-        d_new[2] = sol[idx_hf_in][22]
+            idx_hf_in, dt_hf = get_tIdx(t_start,tau_c_hx,[s[0] for s in sol])
+        d_new[2] = sol[idx_hf_in][22] + dt_hf*derivs[idx_hf_in][21]
 
         # heat exchanger coolant inlet
         idx_hc_in = 0
+        dt_hc = 0.0
         if (t_start > tau_r_hx):
-            idx_hc_in = get_tIdx(t_start,tau_r_hx,[s[0] for s in sol])
-        d_new[0] = sol[idx_hc_in][1]
+            idx_hc_in, dt_hc = get_tIdx(t_start,tau_r_hx,[s[0] for s in sol])
+        d_new[0] = sol[idx_hc_in][1] + dt_hc*derivs[idx_hc_in][0]
 
         # radiator coolant inlet
         idx_rc_in = 0
+        dt_rc = 0.0
         if (t_start > tau_hx_r):
-            idx_rc_in = get_tIdx(t_start,tau_hx_r,[s[0] for s in sol])
-        d_new[1] = sol[idx_rc_in][12]
+            idx_rc_in, dt_rc = get_tIdx(t_start,tau_hx_r,[s[0] for s in sol])
+        d_new[1] = sol[idx_rc_in][12] + dt_rc*derivs[idx_rc_in][11]
 
         # precursors
         idx_c = 0
+        dt_c = 0.0
         if (t_start > tau_l):
-            idx_c = get_tIdx(t_start,tau_l,[s[0] for s in sol])
-        d_new[4] = sol[idx_c][14]
-        d_new[5] = sol[idx_c][15]
-        d_new[6] = sol[idx_c][16]
-        d_new[7] = sol[idx_c][17]
-        d_new[8] = sol[idx_c][18]
-        d_new[9] = sol[idx_c][19]
+            idx_c, dt_c = get_tIdx(t_start,tau_l,[s[0] for s in sol])
+        d_new[4] = sol[idx_c][14] + dt_c*derivs[idx_c][13]
+        d_new[5] = sol[idx_c][15] + dt_c*derivs[idx_c][14]
+        d_new[6] = sol[idx_c][16] + dt_c*derivs[idx_c][15]
+        d_new[7] = sol[idx_c][17] + dt_c*derivs[idx_c][16]
+        d_new[8] = sol[idx_c][18] + dt_c*derivs[idx_c][17]
+        d_new[9] = sol[idx_c][19] + dt_c*derivs[idx_c][18]
 
         d_terms.append(d_new)
 
@@ -215,9 +228,9 @@ def main():
         i += 1
 
     # plot single parameter
-    of_interest = 13
-    plt.plot([s[0] for s in sol],[s[of_interest] for s in sol])
-    plt.show()
+    # of_interest = 13
+    # plt.plot([s[0] for s in sol],[s[of_interest] for s in sol])
+    # plt.show()
 
     # check delay behavior
     # for i in range(len(sol)-1):
