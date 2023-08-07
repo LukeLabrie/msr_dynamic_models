@@ -29,8 +29,8 @@ from parameters import *
 # 26: core fuel node 2 temp
 
 filename1 = "sim_out_1000.0_1.txt"
-filename5 = "sim_out_1000.0.txt"
-filename8 = "sim_out_1000.0_P.txt"
+filename5 = "sim_out_1000.0_5.txt"
+filename8 = "sim_out_1000.0_8.txt"
 
 sol1 = []
 k_file = open(filename1, 'r')
@@ -55,9 +55,9 @@ sol5 = [[float(j) for j in s] for s in sol5]
 sol8 = [[float(j) for j in s] for s in sol8]
 
 k = 10000
-test_pow1 = [(1*s[17]-1) for s in sol1]
-test_pow5 = [(5*s[17]-5) for s in sol5]
-test_pow8 = [(8*s[17]-8) for s in sol8]
+test_pow1 = [(1*s[13]-1) for s in sol1]
+test_pow5 = [(5*s[13]-5) for s in sol5]
+test_pow8 = [(8*s[13]-8) for s in sol8]
 tidx1 = [t[0] for t in enumerate(sol1) if (t[1][0] >= 500.00 and t[1][0] <= 800.00)]
 tidx5 = [t[0] for t in enumerate(sol5) if (t[1][0] >= 500.00 and t[1][0] <= 800.00)]
 tidx8 = [t[0] for t in enumerate(sol8) if (t[1][0] >= 500.00 and t[1][0] <= 800.00)]
